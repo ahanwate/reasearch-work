@@ -1,6 +1,9 @@
 name: runner-filecommand-symlink-poc
 
 on:
+  push:
+    branches:
+      - research/runner-filecommand-symlink-validation
   workflow_dispatch:
 
 permissions:
